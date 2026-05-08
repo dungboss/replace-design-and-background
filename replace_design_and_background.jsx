@@ -186,6 +186,8 @@ function main() {
       return;
     }
 
+    templateList = shuffleArray(templateList);
+
     var designPairsResult = buildDesignPairs(designList);
     if (!designPairsResult.ok) {
       alert(designPairsResult.error);
@@ -419,6 +421,22 @@ function splitDesignPairsEvenly(designPairs, templateCount) {
   };
 }
 
+function shuffleArray(items) {
+  var shuffled = [];
+  for (var i = 0; i < items.length; i++) {
+    shuffled.push(items[i]);
+  }
+
+  for (var j = shuffled.length - 1; j > 0; j--) {
+    var k = Math.floor(Math.random() * (j + 1));
+    var temp = shuffled[j];
+    shuffled[j] = shuffled[k];
+    shuffled[k] = temp;
+  }
+
+  return shuffled;
+}
+
 function applyRandomBackgroundSelection(doc) {
   var backgroundGroups = findBackgroundLayerSets(doc);
   if (backgroundGroups.length == 0) {
@@ -488,6 +506,18 @@ function touchLayer(layer) {
   return layer; 
 } 
 
+function fitImageToCanvas(imageDoc, targetWidth, targetHeight) {
+  var sourceRatio = imageDoc.width.value / imageDoc.height.value;
+  var targetRatio = targetWidth / targetHeight;
+
+  if (sourceRatio > targetRatio) {
+    imageDoc.resizeImage(targetWidth, null, null, ResampleMethod.BICUBIC);
+  } else {
+    imageDoc.resizeImage(null, targetHeight, null, ResampleMethod.BICUBIC);
+  }
+
+  imageDoc.resizeCanvas(targetWidth, targetHeight, AnchorPosition.MIDDLECENTER);
+}
 
 function editContents(newFile, theSO) {    
   var smartObject;
@@ -508,15 +538,7 @@ function editContents(newFile, theSO) {
   activeDocument.activeLayer.isBackgroundLayer=0; 	// Make it a normal Layer
   try {
     objFile= app.activeDocument;				// image document
-    if (objFile.width.value/objFile.height.value > objWidth/objHeight) { //// wider
-      objFile.resizeImage(null, objHeight, null, ResampleMethod.BICUBIC);
-    } else {
-      objFile.resizeImage(objWidth, null, null, ResampleMethod.BICUBIC);
-    } // same aspect ratio or taller
-    try {
-      objFile.resizeCanvas(objWidth, objHeight, AnchorPosition.MIDDLECENTER);
-    }	
-    catch(e){}
+    fitImageToCanvas(objFile, objWidth, objHeight);
     try{
       var mrkLayer = objFile.artLayers.add();				// Add a Layer
       mrkLayer.name = "TL BR Stamp";					// Name Layer
